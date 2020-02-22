@@ -1,0 +1,20 @@
+datadir: "data"
+refreshinterval: 60s
+
+http:
+  address: ":5000"
+  readtimeout: 30
+  writetimeout: 30
+  idletimeout: 60
+  domain: "localhost"
+  cookieexpiry: 30
+
+log:
+  level: "info"
+  format: "text"
+  filename: ""
+  maxsize: 500
+  maxage: 7
+  maxbackups: 5
+  localtime: false
+  compress: true
