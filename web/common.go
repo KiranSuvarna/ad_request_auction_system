@@ -1,12 +1,8 @@
 package web
 
 import (
-	"net/http"
-	"encoding/json"
-	"io/ioutil"
-
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type PingResponse struct {

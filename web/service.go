@@ -4,11 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/youplus/dashboard_server/misc"
+	"bitbucket.org/greedygames/ad_request_auction_system/misc"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
-
 )
 
 // Service HTTP server info
@@ -46,12 +44,8 @@ func NewService(conf *misc.Config) (*Service, error) {
 	s.router.GET("/", s.index)
 	s.router.GET("/ping", s.ping)
 
-	v1 := s.router.Group("/v1")
-	v1.Use(s.authMiddleware())
-	{
-
-	}
-
+	s.router.Group("/v1")
+	
 	return s, nil
 }
 
