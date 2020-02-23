@@ -11,19 +11,22 @@ import (
 
 type Config struct {
 	RefreshInterval time.Duration
-	HTTP     HTTPConfig
-	Log      LogConfig
+	HTTP            HTTPConfig
+	Log             LogConfig
 }
 
 type HTTPConfig struct {
-	Address      string
-	ReadTimeout  int
-	WriteTimeout int
-	IdleTimeout  int
-	Domain       string
-	CookieExpiry int
+	Address        string
+	ReadTimeout    int
+	WriteTimeout   int
+	IdleTimeout    int
+	Domain         string
+	AuctioneerHost string
+	BidderHost     string
+	CookieExpiry   int
 }
 
+// LogConfig Logging configuration
 type LogConfig struct {
 	Level      string
 	Format     string
@@ -33,18 +36,6 @@ type LogConfig struct {
 	MaxBackups int
 	LocalTime  bool
 	Compress   bool
-}
-
-type PostgresConfig struct {
-	Host           string
-	Port           int
-	Database       string
-	User           string
-	Password       string
-	SSLMode        string
-	MaxOpenConns   int
-	MaxIdleConns   int
-	MaxLifetimConn int
 }
 
 // InitLogging Initialize logging framework

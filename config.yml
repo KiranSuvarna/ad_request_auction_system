@@ -7,7 +7,8 @@ http:
   writetimeout: 30
   idletimeout: 60
   domain: "localhost"
-  cookieexpiry: 30
+  auctioneerhost: "http://localhost:5000"
+  bidderhost: "localhost"
 
 log:
   level: "info"
