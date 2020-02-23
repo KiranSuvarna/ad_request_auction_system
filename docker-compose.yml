@@ -1,0 +1,47 @@
+version: "3.7"
+
+services:
+  auctioneer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    env_file:
+      - config.yml
+    networks:
+      - auctioneer_network
+
+  bidder_1:
+    build:
+      context: ./cmd/bidder
+      dockerfile: Dockerfile
+    command: ./bidder -port=9001 -name=bidderOne -delay=5
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+    depends_on:
+      - auctioneer
+    links:
+      - "auctioneer"
+    networks:
+      - auctioneer_network
+
+  bidder_2:
+    build:
+      context: ./cmd/bidder
+      dockerfile: Dockerfile
+    command: ./bidder -port=9002 -name=bidderTwo -delay=10
+    ports:
+      - "9002:9002"
+    restart: unless-stopped
+    depends_on:
+      - auctioneer
+    links:
+      - "auctioneer"
+    networks:
+      - auctioneer_network
+
+networks:
+  auctioneer_network:
