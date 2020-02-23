@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/greedygames/ad_request_auction_system/misc"
+	st "bitbucket.org/greedygames/ad_request_auction_system/store"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,7 @@ import (
 type Service struct {
 	refreshInterval time.Duration
 	shutdownChan    chan bool
+	domain          string
 
 	router *gin.Engine
 	wg     sync.WaitGroup
@@ -22,13 +24,20 @@ type Service struct {
 	BuildTime string
 }
 
+var StoreCon *st.Conn
+var AuctioneerStore *st.Conn
+var BidderStore *st.Conn
+
 // NewService Create a new service
 func NewService(conf *misc.Config) (*Service, error) {
+
+	Init()
 
 	s := &Service{
 		refreshInterval: conf.RefreshInterval,
 		router:          gin.New(),
 		shutdownChan:    make(chan bool),
+		domain:          conf.HTTP.Domain,
 	}
 
 	s.router.Use(gin.Logger())
@@ -44,8 +53,13 @@ func NewService(conf *misc.Config) (*Service, error) {
 	s.router.GET("/", s.index)
 	s.router.GET("/ping", s.ping)
 
-	s.router.Group("/v1")
-	
+	v1 := s.router.Group("/v1")
+	{
+		v1.POST("/auction", s.auctionHandler)
+		v1.POST("/bidder/register", s.registerBidder)
+		v1.GET("/bidder/all", s.getBidders)
+	}
+
 	return s, nil
 }
 
@@ -60,4 +74,10 @@ func (s *Service) Close() {
 
 	s.wg.Wait()
 
+}
+
+func Init() {
+	StoreCon = st.NewStore()
+	AuctioneerStore = StoreCon
+	BidderStore = StoreCon
 }
