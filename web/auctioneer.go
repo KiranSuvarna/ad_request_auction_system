@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"sync"
 	"time"
 
 	"bitbucket.org/greedygames/ad_request_auction_system/misc"
@@ -24,7 +23,6 @@ func (a bidds) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (s *Service) auctionHandler(c *gin.Context) {
 	var (
 		input misc.AuctionReq
-		wg    sync.WaitGroup
 	)
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -37,22 +35,22 @@ func (s *Service) auctionHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no bidders available"})
 		return
 	}
-	wg.Add(len(bidders))
 
 	data := make(chan *misc.BidResponse, len(bidders))
 	for _, b := range bidders {
-		go collectBidResponse(input.AuctionID, b.Host, &wg, data)
+		go collectBidResponse(input.AuctionID, b.Host, data)
 	}
 
 	var bidRes bidds
+
 	for i := 0; i < len(bidders); i++ {
 		if d := <-data; d != nil {
 			bidRes = append(bidRes, d)
 		}
 	}
 
-	wg.Wait()
 	close(data)
+	// a set of methods for the slice type, as with, and call sort.Sort
 	sort.Sort(bidRes)
 	if len(bidRes) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bidders not responding within time"})
@@ -62,7 +60,7 @@ func (s *Service) auctionHandler(c *gin.Context) {
 	s.responseWriter(c, bidRes[0], http.StatusOK)
 }
 
-func collectBidResponse(auctionID, host string, wg *sync.WaitGroup,
+func collectBidResponse(auctionID, host string,
 	data chan *misc.BidResponse) {
 	var err error
 	body := bytes.NewBuffer(nil)
@@ -71,7 +69,6 @@ func collectBidResponse(auctionID, host string, wg *sync.WaitGroup,
 	})
 
 	defer func() {
-		wg.Done()
 		if err != nil {
 			log.WithError(err).Warn("no data")
 			data <- nil
@@ -91,6 +88,7 @@ func collectBidResponse(auctionID, host string, wg *sync.WaitGroup,
 	if err != nil {
 		return
 	}
+	// Http leak 
 	defer resp.Body.Close()
 
 	var res struct {

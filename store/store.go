@@ -23,6 +23,8 @@ type Conn struct {
 
 // NewStore inits new store connection
 func NewStore() *Conn {
+	// new allocates zeroed storage for a new item or type whatever and then returns a pointer to it
+	// same as  conn := Conn{}
 	conn := new(Conn)
 	conn.BidderConn = NewBidderStore(conn)
 

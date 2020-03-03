@@ -29,6 +29,9 @@ var (
 	appName = "gg_ad_auction_system"
 )
 
+// Check for errors in bidders (hardcode), replace store with some cache, remove the bidders binary
+// Close the body after if the request fails to stop Http leak 
+// remove waigroup , consider bidders up and down, what happens to the bidder when it responded more than the given time, bidder seperate from auctioneer
 func main() {
 	flag.Parse()
 
