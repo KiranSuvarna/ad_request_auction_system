@@ -102,7 +102,7 @@ func registerWithAuctioneer(name string) error {
 		// Closed the body to avoid the leaking
 		defer resp.Body.Close()
 
-		// This checks for non 200 responses also
+		// This checks for non 201 responses
 		if resp.StatusCode != 201 {
 			return errs.New("Server error!!")
 		}
