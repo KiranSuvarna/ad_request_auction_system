@@ -1,17 +1,18 @@
 package web
 
 import (
-	"bitbucket.org/greedygames/ad_request_auction_system/misc"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"sort"
 	"sync"
 	"time"
+
+	"bitbucket.org/greedygames/ad_request_auction_system/misc"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type bidds []*misc.BidResponse

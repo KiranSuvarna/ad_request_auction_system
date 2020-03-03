@@ -1,18 +1,19 @@
 package main
 
 import (
-	"bitbucket.org/greedygames/ad_request_auction_system/misc"
 	"bytes"
 	"encoding/json"
 	errs "errors"
 	"flag"
 	"fmt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
 	"time"
+
+	"bitbucket.org/greedygames/ad_request_auction_system/misc"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -97,28 +98,32 @@ func registerWithAuctioneer(name string) error {
 	req.Host = fmt.Sprintf("%s:%d", "localhost", Port)
 	req.Header.Set("Content-Type", "application/json")
 
-	fmt.Println("req: ", req)
+	if resp, err := http.DefaultClient.Do(req); err == nil {
+		// Closed the body to avoid the leaking
+		defer resp.Body.Close()
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
+		// This checks for non 200 responses also
+		if resp.StatusCode != 201 {
+			return errs.New("Server error!!")
+		}
+
+		var res struct {
+			Data *misc.Bidder `json:"data"`
+			Meta misc.Meta    `json:"meta"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+			return err
+		}
+
+		if resp.StatusCode > 201 {
+			return errs.New(res.Meta.Message)
+		}
+
+		BidderID = res.Data.ID
+	} else {
+		// Error is not nil when client's CheckRedirect func failed or if there there are any HTTP protocol error
 		return err
 	}
-	defer resp.Body.Close()
-
-	var res struct {
-		Data *misc.Bidder `json:"data"`
-		Meta misc.Meta    `json:"meta"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return err
-	}
-
-	if resp.StatusCode > 201 {
-		return errs.New(res.Meta.Message)
-	}
-
-	BidderID = res.Data.ID
-	fmt.Println("Bidder ID: ", BidderID)
 	return nil
 }
