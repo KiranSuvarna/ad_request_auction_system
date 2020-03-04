@@ -19,3 +19,10 @@ log:
   maxbackups: 5
   localtime: false
   compress: true
+
+redis:
+  address: "localhost:6379"
+  password: "tstpwd"
+  db: 0
+  maxretries: 3
+  expiration: 15m

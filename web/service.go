@@ -4,10 +4,11 @@ import (
 	"sync"
 	"time"
 
+	"bitbucket.org/greedygames/ad_request_auction_system/db"
 	"bitbucket.org/greedygames/ad_request_auction_system/misc"
-	st "bitbucket.org/greedygames/ad_request_auction_system/store"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 // Service HTTP server info
@@ -18,26 +19,30 @@ type Service struct {
 
 	router *gin.Engine
 	wg     sync.WaitGroup
+	rc     *db.RedisConn
 
 	AppName   string
 	Version   string
 	BuildTime string
 }
 
-var StoreCon *st.Conn
-var AuctioneerStore *st.Conn
-var BidderStore *st.Conn
 
 // NewService Create a new service
 func NewService(conf *misc.Config) (*Service, error) {
 
-	Init()
+	rc, err := db.NewRedis(&conf.Redis)
+	if err != nil {
+		log.WithError(err).Error("Failed to connect to redis")
+
+		return nil, err
+	}
 
 	s := &Service{
 		refreshInterval: conf.RefreshInterval,
 		router:          gin.New(),
 		shutdownChan:    make(chan bool),
 		domain:          conf.HTTP.Domain,
+		rc:				 rc,
 	}
 
 	s.router.Use(gin.Logger())
@@ -74,10 +79,4 @@ func (s *Service) Close() {
 
 	s.wg.Wait()
 
-}
-
-func Init() {
-	StoreCon = st.NewStore()
-	AuctioneerStore = StoreCon
-	BidderStore = StoreCon
 }

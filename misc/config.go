@@ -13,6 +13,8 @@ type Config struct {
 	RefreshInterval time.Duration
 	HTTP            HTTPConfig
 	Log             LogConfig
+	Redis         RedisConfig
+	RedisCluster  RedisClusterConfig
 }
 
 type HTTPConfig struct {
@@ -36,6 +38,25 @@ type LogConfig struct {
 	MaxBackups int
 	LocalTime  bool
 	Compress   bool
+}
+
+// RedisClusterConfig Redis configuration parameters
+type RedisClusterConfig struct {
+	Master     string
+	Replica    string
+	Password   string
+	DB         int
+	MaxRetries int
+	Expiration time.Duration
+}
+
+// RedisConfig Redis configuration parameters
+type RedisConfig struct {
+	Address    string
+	Password   string
+	DB         int
+	MaxRetries int
+	Expiration time.Duration
 }
 
 // InitLogging Initialize logging framework

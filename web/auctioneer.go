@@ -11,6 +11,7 @@ import (
 
 	"bitbucket.org/greedygames/ad_request_auction_system/misc"
 	"github.com/gin-gonic/gin"
+	jsoniter "github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,6 +24,9 @@ func (a bidds) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (s *Service) auctionHandler(c *gin.Context) {
 	var (
 		input misc.AuctionReq
+		ba []string
+		bidders []*misc.Bidder
+		err error
 	)
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -30,10 +34,23 @@ func (s *Service) auctionHandler(c *gin.Context) {
 		return
 	}
 
-	bidders := AuctioneerStore.Bidder().List()
-	if len(bidders) == 0 {
+	if ba, err = s.rc.Keys(fmt.Sprintf("gg_*")); err != nil {
+		log.WithError(err).WithField("key", fmt.Sprintf("gg_bidder")).Warn("Failed to get bidders count from cache")
+	} 
+
+	if len(ba) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no bidders available"})
 		return
+	}
+
+	if biddersMeta, err := s.rc.GetMultiple(ba); err == nil {
+		for k, v := range biddersMeta {
+			var bidder *misc.Bidder
+			if err := jsoniter.ConfigCompatibleWithStandardLibrary.UnmarshalFromString(v, &bidder); err != nil {
+				log.WithError(err).WithField("key", k).Warn("Failed to decode cache value")
+			}
+			bidders = append(bidders, bidder)
+		}
 	}
 
 	data := make(chan *misc.BidResponse, len(bidders))
@@ -42,7 +59,6 @@ func (s *Service) auctionHandler(c *gin.Context) {
 	}
 
 	var bidRes bidds
-
 	for i := 0; i < len(bidders); i++ {
 		if d := <-data; d != nil {
 			bidRes = append(bidRes, d)
@@ -50,7 +66,6 @@ func (s *Service) auctionHandler(c *gin.Context) {
 	}
 
 	close(data)
-	// a set of methods for the slice type, as with, and call sort.Sort
 	sort.Sort(bidRes)
 	if len(bidRes) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bidders not responding within time"})
@@ -84,21 +99,24 @@ func collectBidResponse(auctionID, host string,
 
 	ctx, cancel := context.WithTimeout(context.Background(), 190*time.Millisecond)
 	defer cancel()
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
-	if err != nil {
+
+	if resp, err := http.DefaultClient.Do(req.WithContext(ctx)); err == nil {
+		// Closing the body to avoid the leaking
+		defer resp.Body.Close()
+
+		var res struct {
+			Data *misc.BidResponse `json:"data"`
+			Meta misc.Meta         `json:"meta"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+			return
+		}
+
+		data <- res.Data
+	} else {
+		data <- nil
+		log.WithError(err).Warn("Failed to get the response from bidder")
 		return
-	}
-	// Http leak 
-	defer resp.Body.Close()
-
-	var res struct {
-		Data *misc.BidResponse `json:"data"`
-		Meta misc.Meta         `json:"meta"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return
-	}
-
-	data <- res.Data
+	}	
 }
