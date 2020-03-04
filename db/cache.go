@@ -145,8 +145,8 @@ func (c *RedisConn) GetInt(key string) (int64, error) {
 }
 
 // GetIntMultiple Gets multiple integer values from cache
-func (c *RedisConn) GetIntMultiple(keys []string) (map[string]interface{}, error) {
-	results := make(map[string]interface{}, 0)
+func (c *RedisConn) GetIntMultiple(keys []string) (map[string]int64, error) {
+	results := make(map[string]int64, 0)
 	for _, k := range keys {
 		results[k] = 0
 	}
